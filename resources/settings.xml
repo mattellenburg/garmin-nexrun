@@ -1,0 +1,67 @@
+<resources>
+    <settings>
+
+        <!-- ============================================================ -->
+        <!-- Strength segment timing                                      -->
+        <!-- ============================================================ -->
+
+        <!-- Seconds to display the post-exercise overlay after stopping. -->
+        <setting propertyKey="@Properties.stSetOverlaySeconds"
+                 title="Exercise Overlay Duration (s)">
+            <settingConfig type="numeric" min="2" max="15" />
+        </setting>
+
+        <!-- Milliseconds before the next exercise can start after        -->
+        <!-- the previous one ends. Prevents accidental double-triggers.  -->
+        <setting propertyKey="@Properties.stPostSetCooldownMs"
+                 title="Post-Exercise Cooldown (ms)">
+            <settingConfig type="numeric" min="500" max="10000" />
+        </setting>
+
+        <!-- ============================================================ -->
+        <!-- MET overrides — advanced users may tune these values.        -->
+        <!-- Each property stores MET × 10 (e.g. 80 = MET 8.0).         -->
+        <!-- ============================================================ -->
+
+        <setting propertyKey="@Properties.metBattleRopes"      title="MET × 10: Battle Ropes">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metBurpees"          title="MET × 10: Burpees">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metDips"             title="MET × 10: Dips">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metKettleBellSwings" title="MET × 10: Kettlebell Swings">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metMedBallThrows"    title="MET × 10: Med Ball Throws">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metMonkeyBars"       title="MET × 10: Monkey Bars">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metMtnClimbers"      title="MET × 10: Mountain Climbers">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metPullups"          title="MET × 10: Pull-ups">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metPushups"          title="MET × 10: Push-ups">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metRopeClimb"        title="MET × 10: Rope Climb">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metSledPushPull"     title="MET × 10: Sled Push/Pull">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metSledgeHammer"     title="MET × 10: Sledgehammer">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+        <setting propertyKey="@Properties.metTireFlips"        title="MET × 10: Tire Flips">
+            <settingConfig type="numeric" min="10" max="200" />
+        </setting>
+
+    </settings>
+</resources>

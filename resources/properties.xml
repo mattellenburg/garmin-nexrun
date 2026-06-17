@@ -1,0 +1,50 @@
+<resources>
+    <properties>
+
+        <!-- ============================================================ -->
+        <!-- MET (Metabolic Equivalent of Task) values for each exercise  -->
+        <!-- Source: https://pacompendium.com/conditioning-exercise/      -->
+        <!-- Units: kcal/kg/hour (integer × 10 to avoid floats in XML)   -->
+        <!-- Divide by 10 in code to get the true MET value.             -->
+        <!-- ============================================================ -->
+
+        <!-- Battle Ropes: vigorous bilateral wave pattern -->
+        <property id="metBattleRopes"         type="number">100</property>
+        <!-- Burpees: full-body explosive movement -->
+        <property id="metBurpees"             type="number">80</property>
+        <!-- Dips: upper-body pressing, moderate effort -->
+        <property id="metDips"                type="number">80</property>
+        <!-- Kettlebell Swings: hip-hinge ballistic movement -->
+        <property id="metKettleBellSwings"    type="number">90</property>
+        <!-- Medicine Ball Throws: explosive throwing/catching -->
+        <property id="metMedBallThrows"       type="number">80</property>
+        <!-- Monkey Bars: upper-body pulling/traversal -->
+        <property id="metMonkeyBars"          type="number">80</property>
+        <!-- Mountain Climbers: plank-based running motion -->
+        <property id="metMtnClimbers"         type="number">100</property>
+        <!-- Pull-ups: strict vertical pulling -->
+        <property id="metPullups"             type="number">110</property>
+        <!-- Push-ups: horizontal pressing, bodyweight -->
+        <property id="metPushups"             type="number">80</property>
+        <!-- Rope Climb: vertical pulling, very high effort -->
+        <property id="metRopeClimb"           type="number">120</property>
+        <!-- Sled Push/Pull: loaded locomotion -->
+        <property id="metSledPushPull"        type="number">90</property>
+        <!-- Sledgehammer: rotational swinging, high effort -->
+        <property id="metSledgeHammer"        type="number">90</property>
+        <!-- Tire Flips: explosive full-body deadlift pattern -->
+        <property id="metTireFlips"           type="number">80</property>
+
+        <!-- ============================================================ -->
+        <!-- Strength segment UI timing constants                         -->
+        <!-- ============================================================ -->
+
+        <!-- Seconds to display the post-exercise overlay after stopping. -->
+        <property id="stSetOverlaySeconds"    type="number">5</property>
+
+        <!-- Milliseconds to block a new exercise from starting after     -->
+        <!-- the previous one ends (prevents accidental re-trigger).      -->
+        <property id="stPostSetCooldownMs"    type="number">2000</property>
+
+    </properties>
+</resources>
