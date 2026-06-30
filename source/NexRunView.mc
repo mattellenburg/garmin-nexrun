@@ -31,8 +31,25 @@ class NexRunView extends WatchUi.View {
     public var _summaryTimer   = 0;
 
     // Lap origin markers — reset each time the user switches segments.
+    // _lapStartTime tracks the activity timer (info.timerTime) and is used
+    // for distance-based lap math.  It freezes whenever the session is
+    // paused (Strength/Rest segments — see NexRunMenuDelegate), which is
+    // fine for distance since those segments are stationary.
     public var _lapStartTime     = 0;       // ms into activity timer
     public var _lapStartDistance = 0.0;     // metres
+
+    // Device-uptime equivalent of _lapStartTime, used ONLY for the on-screen
+    // lap clock.  System.getTimer() keeps advancing even while the session
+    // is paused, so the displayed lap timer continues to count up correctly
+    // during Rest and Strength segments instead of freezing at 0:00.
+    private var _lapStartUptimeMs = 0;
+
+    // True once the user has actually pressed Start (set by resetLapTimer(),
+    // called from NexRunDelegate._startActivity()).  Gates the on-screen lap
+    // clock so it stays at 0:00 on the pre-start watch face instead of
+    // ticking up on its own — the 1Hz UI timer runs as soon as the view is
+    // shown, independent of whether recording has begun.
+    private var _activityStarted = false;
 
     // Monotonically increasing counter, incremented in setMode() on every switch.
     // Written to every RECORD row so post-processing can group by segment.
@@ -102,6 +119,11 @@ class NexRunView extends WatchUi.View {
         _strengthTracker  = new StrengthTracker(self);
         _coolDownTracker  = new CoolDownTracker(self);
         _stretchingTracker = new StretchingTracker(self);
+        // Without this, the lap clock would show raw device/simulator uptime
+        // (e.g. "273:00:00") on the pre-start screen, since onUpdate() begins
+        // running via the 1Hz timer in onShow() — well before the user presses
+        // Start and resetLapTimer() is called again to mark the real origin.
+        _lapStartUptimeMs = System.getTimer();
     }
 
     // ---- Page navigation ----
@@ -172,7 +194,25 @@ class NexRunView extends WatchUi.View {
         _segmentNumber++;
         _currentMode  = newMode;
         _lapStartTime = info != null && info.timerTime != null ? info.timerTime : 0;
+        // Always advances, even when the session is paused — see field comment.
+        _lapStartUptimeMs = System.getTimer();
         WatchUi.requestUpdate();
+    }
+
+    // Resets the uptime-based lap clock origin.  Called once by
+    // NexRunDelegate._startActivity() right after session.start() succeeds.
+    // System.getTimer() is relative to device/app uptime, not activity start,
+    // so without this the very first WARMUP segment's lap clock would show a
+    // large stale value instead of starting from 0:00.
+    //
+    // Also flips _activityStarted to true.  Before this is called, the lap
+    // clock displayed in onUpdate() stays pinned at 0:00 instead of ticking
+    // up — the 1Hz UI timer in onShow() runs (and redraws the rest of the
+    // watch face) well before the user presses Start, and without this guard
+    // the lap clock would visibly count up on its own before recording begins.
+    public function resetLapTimer() as Void {
+        _lapStartUptimeMs = System.getTimer();
+        _activityStarted  = true;
     }
 
     // Zeros the three exercise RECORD fields (IDs 0–2).
@@ -259,7 +299,15 @@ class NexRunView extends WatchUi.View {
         // Write per-row FIT fields (accel, segment number, calorie total).
         _writePerRowFitFields(calories);
 
-        var lapTimeSec = (totalTimeMs - _lapStartTime) / 1000;
+        // The on-screen lap clock uses device uptime (System.getTimer()), not
+        // the activity timer.  The activity timer is intentionally paused
+        // during Strength/Rest segments (see NexRunMenuDelegate) so Garmin
+        // Connect's avg pace excludes that time — but that same pause would
+        // freeze this display at 0:00 if we used info.timerTime here instead.
+        // Gated on _activityStarted so the clock stays at 0:00 on the
+        // pre-start watch face rather than counting up before Start is pressed.
+        var lapTimeSec = _activityStarted
+                         ? (System.getTimer() - _lapStartUptimeMs) / 1000 : 0;
         var lapDistM   = currentDistM - _lapStartDistance;
 
         if (_currentPage == 1) {

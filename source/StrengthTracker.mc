@@ -2,6 +2,7 @@ import Toybox.Activity;
 import Toybox.Application;
 import Toybox.Attention;
 import Toybox.FitContributor;
+import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
 import Toybox.System;
@@ -55,8 +56,19 @@ class StrengthTracker {
     private var _exerciseStartMs = 0;
 
     // System.getTimer() timestamp of the most recent exercise/rest end.
-    // Pre-set to -10000 so the cooldown is immediately expired on startup.
-    private var _lastExerciseEndMs = -10000;
+    // Only meaningful once _hasEndedExercise is true (see below).
+    private var _lastExerciseEndMs = 0;
+
+    // True once at least one exercise/rest has been stopped.  The post-set
+    // cooldown only exists to prevent an accidental immediate re-trigger
+    // right after a real stop, so it has nothing to guard against until that
+    // has happened at least once.  This avoids comparing System.getTimer()
+    // against a fixed sentinel offset: System.getTimer() reflects real device
+    // uptime (not app-launch-relative time) and is a 32-bit signed value, so
+    // a sentinel like "construction time minus 10 seconds" can wrap negative
+    // on a device that has been powered on for ~25+ days, silently blocking
+    // the very first exercise of the activity with no error or tone.
+    private var _hasEndedExercise = false;
 
     // -------------------------------------------------------------------------
     // Display / overlay state (read by NexRunView.onUpdate)
@@ -105,18 +117,32 @@ class StrengthTracker {
     // -------------------------------------------------------------------------
 
     // Returns the lap-screen data dictionary for the strength segment.
-    // When an exercise or rest is running the display shows the name and
-    // elapsed time so the user can see progress at a glance.
-    // When idle it shows completed set count and total segment calories.
+    //
+    // Three visually distinct states, flagged via :labelColor so LapDisplay
+    // can tint the primary field without knowing anything about Strength:
+    //   ACTIVE EXERCISE — exercise name in RED, signaling "working".
+    //   RESTING         — "RESTING" in YELLOW, signaling "recovering".  The
+    //                      label reads as a state rather than the literal
+    //                      exercise name "Rest" passed into startExercise().
+    //   IDLE            — white, unchanged from before.
     function getDisplayData(info, lapDistM as Float) as Dictionary {
         if (_activeExercise != null) {
-            // Active exercise or rest: show name and elapsed seconds.
             var elapsedSec = (System.getTimer() - _exerciseStartMs) / 1000;
+            if (_activeIsRest) {
+                return {
+                    :valueL     => CommonDisplay.formatTime(elapsedSec),
+                    :labelL     => "RESTING",
+                    :valueR     => null,
+                    :labelR     => null,
+                    :labelColor => Graphics.COLOR_YELLOW,
+                };
+            }
             return {
-                :valueL => CommonDisplay.formatTime(elapsedSec),
-                :labelL => _activeExercise,
-                :valueR => null,
-                :labelR => null,
+                :valueL     => CommonDisplay.formatTime(elapsedSec),
+                :labelL     => _activeExercise,
+                :valueR     => null,
+                :labelR     => null,
+                :labelColor => Graphics.COLOR_RED,
             };
         }
 
@@ -133,6 +159,7 @@ class StrengthTracker {
 
     // -------------------------------------------------------------------------
     // Exercise lifecycle — called from NexRunMenuDelegate and NexRunDelegate
+
     // -------------------------------------------------------------------------
 
     // Starts tracking the named exercise or a rest interval.
@@ -142,9 +169,13 @@ class StrengthTracker {
     // looking away from the watch.
     public function startExercise(name as String) as Void {
         // Enforce post-exercise cooldown to prevent accidental double-starts.
-        var cooldownMs = _getPostSetCooldownMs();
-        if (System.getTimer() - _lastExerciseEndMs < cooldownMs) {
-            return;
+        // Skipped entirely until an exercise has actually ended once — see
+        // _hasEndedExercise comment for why this can't use a sentinel timestamp.
+        if (_hasEndedExercise) {
+            var cooldownMs = _getPostSetCooldownMs();
+            if (System.getTimer() - _lastExerciseEndMs < cooldownMs) {
+                return;
+            }
         }
 
         _activeExercise = name;
@@ -180,9 +211,10 @@ class StrengthTracker {
 
         // Clear active state before branching so the display reverts to idle
         // even if something below throws.
-        _activeExercise  = null;
-        _activeIsRest    = false;
+        _activeExercise    = null;
+        _activeIsRest      = false;
         _lastExerciseEndMs = System.getTimer();
+        _hasEndedExercise  = true;
 
         if (wasRest) {
             // Rest interval ended — no calories, no FIT writes, no set counted.
@@ -215,6 +247,15 @@ class StrengthTracker {
     // current exercise rather than end the entire activity.
     public function isExerciseActive() as Boolean {
         return _activeExercise != null;
+    }
+
+    // Returns true only when a genuine exercise (not a rest interval) is
+    // running.  Used by NexRunDelegate to decide whether the top item of the
+    // segment-switch menu should offer a quick "Rest" shortcut: that shortcut
+    // only makes sense while the user is actively exercising, not while they
+    // are already resting or idle in the Strength segment.
+    public function isRealExerciseActive() as Boolean {
+        return _activeExercise != null && !_activeIsRest;
     }
 
     // Returns the name of the active exercise/rest, or null if idle.

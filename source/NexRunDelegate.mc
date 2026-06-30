@@ -23,7 +23,8 @@ import Toybox.WatchUi;
 //
 //   Power/Menu → stop activity, show Save menu
 class NexRunDelegate extends WatchUi.BehaviorDelegate {
-    private var _view as NexRunView;
+
+    private var _view    as NexRunView;
     private var _session as ActivityRecording.Session? = null;
 
     // True once the activity has been started at least once, so we can
@@ -47,7 +48,7 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
 
         if (v._showingSummary) {
             v._showingSummary = false;
-            v._summaryTimer = 0;
+            v._summaryTimer   = 0;
             WatchUi.requestUpdate();
             return true;
         }
@@ -58,10 +59,8 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
         }
 
         // Strength + exercise active → stop the exercise, not the whole activity.
-        if (
-            v._currentMode == $.STATE_STRENGTH &&
-            v._strengthTracker.isExerciseActive()
-        ) {
+        if (v._currentMode == $.STATE_STRENGTH &&
+            v._strengthTracker.isExerciseActive()) {
             v._strengthTracker.stopExercise();
             return true;
         }
@@ -71,9 +70,7 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
             v._strengthTracker.stopExercise();
         }
         _session.stop();
-        if (Attention has :playTone) {
-            Attention.playTone(Attention.TONE_STOP);
-        }
+        if (Attention has :playTone) { Attention.playTone(Attention.TONE_STOP); }
         _pushSaveMenu();
         return true;
     }
@@ -83,8 +80,8 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
     private function _startActivity() as Void {
         if (_session == null) {
             _session = ActivityRecording.createSession({
-                :name => "NexRun",
-                :sport => Activity.SPORT_RUNNING,
+                :name     => "NexRun",
+                :sport    => Activity.SPORT_RUNNING,
                 :subSport => Activity.SUB_SPORT_GENERIC,
             });
             _view.setupFitFields(_session);
@@ -92,12 +89,12 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
         if (!_session.isRecording()) {
             _session.start();
             _activityStarted = true;
-            if (Attention has :playTone) {
-                Attention.playTone(Attention.TONE_START);
-            }
-            if (Attention has :vibrate) {
-                Attention.vibrate([new Attention.VibeProfile(50, 200)]);
-            }
+            // Align the uptime-based lap clock with activity start; without
+            // this the first WARMUP segment's timer would show device uptime
+            // instead of counting up from 0:00.
+            _view.resetLapTimer();
+            if (Attention has :playTone)  { Attention.playTone(Attention.TONE_START); }
+            if (Attention has :vibrate)   { Attention.vibrate([new Attention.VibeProfile(50, 200)]); }
         }
         WatchUi.requestUpdate();
     }
@@ -108,19 +105,13 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
         var v = _view as NexRunView;
         if (v._showingSummary) {
             v._showingSummary = false;
-            v._summaryTimer = 0;
+            v._summaryTimer   = 0;
             WatchUi.requestUpdate();
             return true;
         }
         var key = evt.getKey();
-        if (key == WatchUi.KEY_DOWN) {
-            _view.nextPage();
-            return true;
-        }
-        if (key == WatchUi.KEY_UP) {
-            _view.previousPage();
-            return true;
-        }
+        if (key == WatchUi.KEY_DOWN) { _view.nextPage();     return true; }
+        if (key == WatchUi.KEY_UP)   { _view.previousPage(); return true; }
         return false;
     }
 
@@ -139,12 +130,12 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
         // Summary overlay takes priority — dismiss it on any Back press.
         if (v._showingSummary) {
             v._showingSummary = false;
-            v._summaryTimer = 0;
+            v._summaryTimer   = 0;
             WatchUi.requestUpdate();
             return true;
         }
 
-        var now = System.getTimer();
+        var now   = System.getTimer();
         var delta = now - _lastBackPressMs;
         _lastBackPressMs = now;
 
@@ -157,7 +148,7 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
         // Single press — show the segment name overlay behind the menu so
         // there's never a blank screen if the user opens and immediately cancels.
         v._showingSummary = true;
-        v._summaryTimer = 3;
+        v._summaryTimer   = 3;
         return _pushSegmentMenu();
     }
 
@@ -188,7 +179,7 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
         _applyTimerStateForMode($.STATE_REST);
 
         v._showingSummary = true;
-        v._summaryTimer = 3;
+        v._summaryTimer   = 3;
 
         var info = Activity.getActivityInfo();
         if (info != null && info.timerTime != null) {
@@ -205,35 +196,23 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
     // ---- Power / Menu button — stop activity ----
 
     function onMenu() as Boolean {
-        if (_session == null || !_activityStarted) {
-            return false;
-        }
+        if (_session == null || !_activityStarted) { return false; }
         var v = _view as NexRunView;
         if (v._currentMode == $.STATE_STRENGTH) {
             v._strengthTracker.stopExercise();
         }
         // Ensure session is recording before calling stop(), since it may be
         // paused (timer stopped for a Strength/Rest segment).
-        if (_session.isRecording()) {
-            _session.stop();
-        }
-        if (Attention has :playTone) {
-            Attention.playTone(Attention.TONE_STOP);
-        }
+        if (_session.isRecording()) { _session.stop(); }
+        if (Attention has :playTone) { Attention.playTone(Attention.TONE_STOP); }
         _pushSaveMenu();
         return true;
     }
 
     // ---- Gesture-based page scrolling ----
 
-    function onNextPage() as Boolean {
-        _view.nextPage();
-        return true;
-    }
-    function onPreviousPage() as Boolean {
-        _view.previousPage();
-        return true;
-    }
+    function onNextPage() as Boolean     { _view.nextPage();     return true; }
+    function onPreviousPage() as Boolean { _view.previousPage(); return true; }
 
     // ---- Session timer management ----
 
@@ -246,82 +225,58 @@ class NexRunDelegate extends WatchUi.BehaviorDelegate {
     }
 
     private function _applyTimerStateForMode(newMode as Number) as Void {
-        if (_session == null || !_activityStarted) {
-            return;
-        }
-        var shouldRun =
-            newMode == $.STATE_WARMUP ||
-            newMode == $.STATE_CARDIO ||
-            newMode == $.STATE_COOLDOWN ||
-            newMode == $.STATE_STRETCHING;
+        if (_session == null || !_activityStarted) { return; }
+        var shouldRun = (newMode == $.STATE_WARMUP   ||
+                         newMode == $.STATE_CARDIO   ||
+                         newMode == $.STATE_COOLDOWN ||
+                         newMode == $.STATE_STRETCHING);
         if (shouldRun && !_session.isRecording()) {
-            _session.start(); // Resume timer
+            _session.start();  // Resume timer
         } else if (!shouldRun && _session.isRecording()) {
-            _session.stop(); // Pause timer (not a full stop — session stays alive)
+            _session.stop();   // Pause timer (not a full stop — session stays alive)
         }
     }
 
     // ---- Menu builders ----
 
+    // Builds the segment-switch menu.  While in Strength mode the top item
+    // changes based on what's currently happening:
+    //   - A real exercise is running   → top item is "Rest" (id "strength_rest"),
+    //     a one-tap shortcut into an in-strength rest interval.  This does NOT
+    //     switch segments — it stays in Strength so the rest is excluded from
+    //     calories the same way the Exercise-menu "Rest" option works.
+    //   - Idle or already resting      → top item is "Exercise" as before,
+    //     opening the exercise picker.  Offering the "Rest" shortcut again
+    //     while already resting would be redundant.
     private function _pushSegmentMenu() as Boolean {
-        var v = _view as NexRunView;
+        var v    = _view as NexRunView;
         var menu = new WatchUi.Menu2({ :title => "Switch To:" });
         if (v._currentMode == $.STATE_STRENGTH) {
-            menu.addItem(
-                new WatchUi.MenuItem(
-                    "Exercise",
-                    "Pick an exercise",
-                    "exercise",
-                    null
-                )
-            );
+            if (v._strengthTracker.isRealExerciseActive()) {
+                menu.addItem(new WatchUi.MenuItem("Rest", "End set & rest", "strength_rest", null));
+            } else {
+                menu.addItem(new WatchUi.MenuItem("Exercise", "Pick an exercise", "exercise", null));
+            }
         }
-        menu.addItem(
-            new WatchUi.MenuItem("Rest", "Recovery Phase", "rest", null)
-        );
-        menu.addItem(
-            new WatchUi.MenuItem("Cardio", "Moving Phase", "cardio", null)
-        );
-        menu.addItem(
-            new WatchUi.MenuItem("Strength", "Strength Phase", "strength", null)
-        );
-        menu.addItem(
-            new WatchUi.MenuItem(
-                "Cool Down",
-                "Cool Down Phase",
-                "cooldown",
-                null
-            )
-        );
-        menu.addItem(
-            new WatchUi.MenuItem(
-                "Stretching",
-                "Recovery Phase",
-                "stretching",
-                null
-            )
-        );
-        menu.addItem(
-            new WatchUi.MenuItem("Warmup", "Warmup Phase", "warmup", null)
-        );
-
-        WatchUi.pushView(
-            menu,
+        menu.addItem(new WatchUi.MenuItem("Warmup",    "Warmup Phase",    "warmup",     null));
+        menu.addItem(new WatchUi.MenuItem("Cardio",    "Moving Phase",    "cardio",     null));
+        menu.addItem(new WatchUi.MenuItem("Rest",      "Recovery Phase",  "rest",       null));
+        menu.addItem(new WatchUi.MenuItem("Strength",  "Strength Phase",  "strength",   null));
+        menu.addItem(new WatchUi.MenuItem("Cool Down", "Cool Down Phase", "cooldown",   null));
+        menu.addItem(new WatchUi.MenuItem("Stretching","Recovery Phase",  "stretching", null));
+        WatchUi.pushView(menu,
             new NexRunMenuDelegate(_view, _session, self),
-            WatchUi.SLIDE_UP
-        );
+            WatchUi.SLIDE_UP);
         return true;
     }
 
     private function _pushSaveMenu() as Void {
         var menu = new WatchUi.Menu2({ :title => "Paused" });
-        menu.addItem(new WatchUi.MenuItem("Resume", null, "resume", null));
-        menu.addItem(new WatchUi.MenuItem("Save", null, "save", null));
+        menu.addItem(new WatchUi.MenuItem("Resume",  null, "resume",  null));
+        menu.addItem(new WatchUi.MenuItem("Save",    null, "save",    null));
         menu.addItem(new WatchUi.MenuItem("Discard", null, "discard", null));
-        WatchUi.pushView(
-            menu,
+        WatchUi.pushView(menu,
             new SaveMenuDelegate(_session, _view),
-            WatchUi.SLIDE_UP
-        );
+            WatchUi.SLIDE_UP);
     }
 }

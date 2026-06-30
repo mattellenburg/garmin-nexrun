@@ -8,7 +8,10 @@ import Toybox.WatchUi;
 //
 // MENU HIERARCHY:
 //   Segment menu  → Warmup | Cardio | Rest | Strength | Cool Down | Stretching
-//                          └─ (when in Strength) Exercise ──►
+//                          └─ (when in Strength, idle/resting) Exercise ──►
+//                          └─ (when in Strength, exercising)   Rest
+//                                  ↑ in-strength rest shortcut; does NOT
+//                                    switch segments — see "strength_rest" below.
 //   Exercise menu → Rest | Exit | Battle Ropes | … | Tire Flips | Generic ──►
 //   Generic menu  → MET 5.0 | MET 6.0 | … | MET 12.0
 //
@@ -39,6 +42,18 @@ class NexRunMenuDelegate extends WatchUi.Menu2InputDelegate {
         // "exercise" is only present in Strength mode — push the exercise sub-menu.
         if (id.equals("exercise")) {
             _pushExerciseMenu();
+            return;
+        }
+
+        // "strength_rest" is the context-sensitive top item shown only while a
+        // real exercise is running in Strength mode.  It starts an in-strength
+        // rest interval directly — no segment switch, no lap marker, no timer
+        // pause/resume, since we're staying in Strength the whole time.
+        if (id.equals("strength_rest")) {
+            v._strengthTracker.stopExercise();
+            v._strengthTracker.startExercise("Rest");
+            WatchUi.popView(WatchUi.SLIDE_DOWN);
+            WatchUi.requestUpdate();
             return;
         }
 

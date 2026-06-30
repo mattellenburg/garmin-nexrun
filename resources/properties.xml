@@ -46,5 +46,13 @@
         <!-- the previous one ends (prevents accidental re-trigger).      -->
         <property id="stPostSetCooldownMs"    type="number">2000</property>
 
+        <!-- ============================================================ -->
+        <!-- Post-save summary screen                                     -->
+        <!-- ============================================================ -->
+
+        <!-- Seconds the post-save summary screen stays visible before    -->
+        <!-- auto-exiting back to the watch face.                         -->
+        <property id="savedSummarySeconds"    type="number">8</property>
+
     </properties>
 </resources>

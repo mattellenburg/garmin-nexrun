@@ -6,12 +6,17 @@ import Toybox.Lang;
 // direct knowledge of which segment type is running.
 //
 // Dictionary keys:
-//   :valueL  — left data value (required)
-//   :labelL  — left label (required)
-//   :valueR  — right data value; null collapses to single-column layout
-//   :labelR  — right label
-//   :valueB  — optional bottom value (e.g. overall pace in Cardio)
-//   :labelB  — optional bottom label
+//   :valueL     — left data value (required)
+//   :labelL     — left label (required)
+//   :valueR     — right data value; null collapses to single-column layout
+//   :labelR     — right label
+//   :valueB     — optional bottom value (e.g. overall pace in Cardio)
+//   :labelB     — optional bottom label
+//   :labelColor — optional Graphics color for labL/valL text; defaults to
+//                 white.  Lets a tracker call out a state visually (e.g.
+//                 StrengthTracker uses this to distinguish an active
+//                 exercise from an in-strength rest interval) without
+//                 LapDisplay needing any tracker-specific knowledge.
 module LapDisplay {
 
     // Draws the full lap screen: timer bar, two (or one) data fields,
@@ -21,8 +26,10 @@ module LapDisplay {
         var labL  = displayData[:labelL];
         var valR  = displayData[:valueR];
         var labR  = displayData[:labelR];
-        var valB  = displayData[:valueB];   // optional
-        var labB  = displayData[:labelB];   // optional
+        var valB  = displayData[:valueB];        // optional
+        var labB  = displayData[:labelB];         // optional
+        var labelColor = displayData[:labelColor] != null
+                         ? displayData[:labelColor] : Graphics.COLOR_WHITE;
 
         // --- Lap timer at the top ---
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
@@ -34,17 +41,23 @@ module LapDisplay {
 
         // --- Middle data fields ---
         // Single-column when valR is null; two-column otherwise.
+        // labelColor tints the primary (left/single) value+label so a tracker
+        // can flag an important state change (e.g. resting vs. exercising).
         if (valR == null || valR.equals("")) {
+            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
             dc.drawText(w / 2, 115, Graphics.FONT_MEDIUM,
                 valL + " " + labL,
                 Graphics.TEXT_JUSTIFY_CENTER);
         } else {
             // Left column
+            dc.setColor(labelColor, Graphics.COLOR_TRANSPARENT);
             dc.drawText(w / 4, 105, Graphics.FONT_LARGE,
                 valL, Graphics.TEXT_JUSTIFY_CENTER);
             dc.drawText(w / 4, 140, Graphics.FONT_XTINY,
                 labL, Graphics.TEXT_JUSTIFY_CENTER);
-            // Right column
+            // Right column always white — labelColor only applies to the left
+            // field, which is where trackers report their primary state.
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             dc.drawText((w * 3) / 4, 105, Graphics.FONT_LARGE,
                 valR, Graphics.TEXT_JUSTIFY_CENTER);
             dc.drawText((w * 3) / 4, 140, Graphics.FONT_XTINY,

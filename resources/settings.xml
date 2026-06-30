@@ -19,6 +19,17 @@
         </setting>
 
         <!-- ============================================================ -->
+        <!-- Post-save summary screen                                     -->
+        <!-- ============================================================ -->
+
+        <!-- Seconds the post-save summary screen stays visible before    -->
+        <!-- auto-exiting back to the watch face.                         -->
+        <setting propertyKey="@Properties.savedSummarySeconds"
+                 title="Saved Summary Duration (s)">
+            <settingConfig type="numeric" min="3" max="20" />
+        </setting>
+
+        <!-- ============================================================ -->
         <!-- MET overrides — advanced users may tune these values.        -->
         <!-- Each property stores MET × 10 (e.g. 80 = MET 8.0).         -->
         <!-- ============================================================ -->
